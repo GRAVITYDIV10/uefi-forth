@@ -22,11 +22,9 @@ efi:
 image: efi
 	mkdir -pv root
 	mkdir -pv input/EFI/BOOT
-	cp -rvf gnu-efi input/EFI/BOOT/
-	cp -vf genimage.cfg input/EFI/BOOT/
-	cp -vf forth.c input/EFI/BOOT/
-	cp -vf makefile input/EFI/BOOT/
-	cp -vf BOOTX64.EFI  input/EFI/BOOT/
+	rsync -av --exclude 'input/*' \
+		--exclude 'images/*' \
+		./ input/EFI/BOOT/
 	genimage
 
 
@@ -39,8 +37,6 @@ qemu: image
 		-device virtio-rng-pci \
 		-drive if=pflash,format=raw,unit=0,file=$(OVMF_FD),readonly=on \
 		-hda images/disk.img
-
-
 
 clean:
 	rm -rfv *.su *.out *.exe *.efi *.EFI *.o *.lib *.map ./tmp/* ./input/* ./images/*

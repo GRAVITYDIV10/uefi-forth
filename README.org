@@ -1,0 +1,50 @@
+* FORTH on UEFI
+
+a simple itc forth run on uefi
+
+** support
+
+1. branch word: if then
+
+2. loop word: begin until
+
+3. cooperative multitasking word: yield tasknew
+
+** build
+
+#+BEGIN_SRC
+  make
+#+END_SRC
+
+** test
+
+#+BEGIN_SRC
+  make qemu
+#+END_SRC
+
+** run on real hardware
+
+#+BEGIN_SRC
+  make
+  dd if=images/disk.img of=/dev/sdX
+  # then reboot your machine, select boot device
+#+END_SRC
+
+** stack check
+
+all C function use in forth must tail call optimized
+
+** screenshot
+
+[[file:qemu.png]]
+
+[[file:thinkpad-x230.jpg]]
+
+
+** todo
+
+1. add usb support
+
+2. add plot support
+
+3. add network support
