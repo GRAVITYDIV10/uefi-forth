@@ -1476,7 +1476,20 @@ wdefword(tasknew, "tasknew", w2xt, 0) {
 ' drawloop wbody@ tasknew 
 */
 
-wdefcode(sprst, "sprst", tasknew, 0) {
+// (addr u value)
+wdefword(defconst, "defconst", tasknew, 0) {
+	f_tor, f_defword,
+        f_2lit, "doconst", 7, f_find, f_wentrget, f_latestget, f_wentrset,
+	f_fromr, f_latestget, f_wbodyset,
+        f_exit,
+};
+
+wdefword(constant, "constant", defconst, 0) {
+	f_token, f_tiused, f_branch0, w_constant,
+	f_tib, f_tiused, f_rot, f_defconst, f_exit,
+};
+
+wdefcode(sprst, "sprst", constant, 0) {
 	sp = sb;
 	ss &= ~(ssdove);
 	ss &= ~(ssdund);
@@ -2319,12 +2332,6 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle,
 	GBS = GST->BootServices;
 	GRS = GST->RuntimeServices;
 
-	EFI_GUID rngGUID = EFI_RNG_PROTOCOL_GUID;
-	Status = GBS->LocateProtocol(&rngGUID, NULL, (void **)&GRNG);
-	if (Status != EFI_SUCCESS) {
-		GST->ConOut->OutputString(GST->ConOut, L"NO HWRNG ");
-		GRNG = NULL;
-	}
 	EFI_GUID gopGUID = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
 	Status = GBS->LocateProtocol(&gopGUID, NULL, (void **)&GGOP);
         if (Status != EFI_SUCCESS) {
@@ -2339,14 +2346,20 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle,
 			GGOP = NULL;
 		}
 	}
-
+	GST->ConOut->EnableCursor(GST->ConOut, 1);
+	GST->ConOut->SetAttribute(GST->ConOut,
+		EFI_GREEN | EFI_BACKGROUND_BLACK);
+        GST->ConOut->OutputString(GST->ConOut, L"HELLO UEFI");
+	EFI_GUID rngGUID = EFI_RNG_PROTOCOL_GUID;
+	Status = GBS->LocateProtocol(&rngGUID, NULL, (void **)&GRNG);
+	if (Status != EFI_SUCCESS) {
+		GST->ConOut->OutputString(GST->ConOut, L"NO HWRNG ");
+		GRNG = NULL;
+	}
 	efi_time();
 	seed = Time.Year + Time.Month + Time.Day \
 		+ Time.Hour + Time.Minute + Time.Second;
 
-	GST->ConOut->EnableCursor(GST->ConOut, 1);
-	GST->ConOut->SetAttribute(GST->ConOut,
-		EFI_GREEN | EFI_BACKGROUND_BLACK);
         GST->ConOut->OutputString(GST->ConOut, L"HELLO FORTH");
 	forth();
 	while(1);
