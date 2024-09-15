@@ -2207,14 +2207,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle,
                 GST->ConOut->OutputString(GST->ConOut, L"NO GOP");
                 GGOP = NULL;
         }
-	EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *gop_info;
-	UINTN SizeOfInfo;
-
-	Status = GGOP->QueryMode(GGOP, GGOP->Mode==NULL?0:GGOP->Mode->Mode,
-			 &SizeOfInfo, &gop_info);
-	if (Status == EFI_NOT_STARTED) {
-		Status = GGOP->SetMode(GGOP, 0);
-	}
+	Status = GGOP->SetMode(GGOP, GGOP->Mode->MaxMode - 1);
 	if(EFI_ERROR(Status)) {
                 GST->ConOut->OutputString(GST->ConOut, L"GOP GET MODE FAIL");
 		GGOP = NULL;
