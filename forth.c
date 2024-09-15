@@ -2209,8 +2209,11 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle,
         }
 	Status = GGOP->SetMode(GGOP, GGOP->Mode->MaxMode - 1);
 	if(EFI_ERROR(Status)) {
-                GST->ConOut->OutputString(GST->ConOut, L"GOP GET MODE FAIL");
-		GGOP = NULL;
+		Status = GGOP->SetMode(GGOP, 0);
+		if(EFI_ERROR(Status)) {
+			GST->ConOut->OutputString(GST->ConOut, L"GOP GET MODE FAIL");
+			GGOP = NULL;
+		}
 	}
 
 	efi_time();
