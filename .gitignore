@@ -1,0 +1,13 @@
+*.out
+*.map
+forth
+*.o
+images/*
+input/*
+*.EFI
+*.lib
+*.su
+*.dis
+*~
+compile_commands.json
+.cache/*
