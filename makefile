@@ -35,7 +35,7 @@ qemu: image
 		-M q35 \
 		-m 256 \
 		-cpu qemu64 \
-		-vga cirrus \
+		-vga virtio \
 		-device virtio-rng-pci \
 		-drive if=pflash,format=raw,unit=0,file=$(OVMF_FD),readonly=on \
 		-hda images/disk.img
