@@ -25,6 +25,7 @@ torb = tirb * addrsize,
 tort = tirt * addrsize,
 toip = tiip * addrsize,
 toss = tiss * addrsize,
+tsize = toss + addrsize,
 };
 
 enum {
@@ -35,17 +36,23 @@ ssdove = (1 << 10),
 ssdund = (1 << 11),
 };
 
-#define tasknew(label, gap, dsize, rsize, entry, link) \
-forth_t dstk_##label[gap + dsize + gap]; \
-forth_t rstk_##label[gap + rsize + gap]; \
+enum {
+	gsize = 8,
+	dsize = 128,
+	rsize = 128,
+};
+
+#define tasknew(label, entry, link) \
+forth_t dstk_##label[gsize + dsize + gsize]; \
+forth_t rstk_##label[gsize + rsize + gsize]; \
 forth_t task_##label[] = { \
 [tinext] = link, \
-[tisp] = &dstk_##label[gap], \
-[tirp] = &rstk_##label[gap], \
-[tisb] = &dstk_##label[gap], \
-[tist] = &dstk_##label[gap + dsize - 1], \
-[tirb] = &rstk_##label[gap], \
-[tirt] = &rstk_##label[gap + rsize - 1], \
+[tisp] = &dstk_##label[gsize], \
+[tirp] = &rstk_##label[gsize], \
+[tisb] = &dstk_##label[gsize], \
+[tist] = &dstk_##label[gsize + dsize - 1], \
+[tirb] = &rstk_##label[gsize], \
+[tirt] = &rstk_##label[gsize + rsize - 1], \
 [tiip] = entry, \
 [tiss] = 0, \
 };
@@ -1216,8 +1223,7 @@ wdefcode(fblinesize, "fblinesize", fbymax, 0) {
 };
 
 forth_t efi_fbbpp(void) {
-	// 32bit framebuffer
-	return 4;
+	return 32;
 };
 
 wdefcode(fbbpp, "fbbpp", fblinesize, 0) {
@@ -1232,8 +1238,22 @@ static inline void efi_fbdraw(int x, int y, forth_t color) {
 	if ((x >= efi_fbxmax()) || (y >= efi_fbymax())) {
 		return;
 	}
-	*((uint32_t *)(efi_fbaddr() + efi_fbbpp() * efi_fblinesize() * y
-			+ efi_fbbpp() * x)) = color;
+	if (efi_fbbpp() == 32) {
+		*((uint32_t *)(efi_fbaddr() + 4 * efi_fblinesize() * y + 4 * x)) = color;
+		return;
+	}
+	if (efi_fbbpp() == 16) {
+		*((uint16_t *)(efi_fbaddr() + 2 * efi_fblinesize() * y + 2 * x)) = color;
+		return;
+	}
+	if (efi_fbbpp() == 8) {
+		*((uint8_t *)(efi_fbaddr() + 1 * efi_fblinesize() * y + 1 * x)) = color;
+		return;
+	}
+	if (efi_fbbpp() == 64) {
+		*((uint64_t *)(efi_fbaddr() + 8 * efi_fblinesize() * y + 8 * x)) = color;
+		return;
+	}
 }
 
 wdefcode(fbdraw, "fbdraw", fbbpp, 0) {
@@ -1352,7 +1372,111 @@ wdefword(fbyzebra, "fbyzebra", fbxzebra, 0) {
 	f_lit, 0, f_branch, w_fbyzebra_loop,
 };
 
-wdefcode(sprst, "sprst", fbyzebra, 0) {
+wdefconst(tonext, "tonext", tonext, fbyzebra, 0);
+wdefconst(tosp, "tosp", tosp, tonext, 0);
+wdefconst(torp, "torp", torp, tosp, 0);
+wdefconst(tosb, "tosb", tosb, torp, 0);
+wdefconst(tost, "tost", tost, tosb, 0);
+wdefconst(torb, "torb", torb, tost, 0);
+wdefconst(tort, "tort", tort, torb, 0);
+wdefconst(toip, "toip", toip, tort, 0);
+wdefconst(toss, "toss", toss, toip, 0);
+
+wdefword(tonextget, "tonext@", toss, 0) {
+	f_tonext, f_add, f_load, f_exit,
+};
+wdefword(tospget, "tosp@", tonextget, 0) {
+	f_tosp, f_add, f_store, f_exit,
+};
+wdefword(torpget, "torp@", tospget, 0) {
+	f_torp, f_add, f_load, f_exit,
+};
+wdefword(tosbget, "tosb@", torpget, 0) {
+	f_tosb, f_add, f_load, f_exit,
+};
+wdefword(tostget, "tost@", tosbget, 0) {
+	f_tost, f_add, f_load, f_exit,
+};
+wdefword(torbget, "torb@", tostget, 0) {
+	f_torb, f_add, f_load, f_exit,
+};
+wdefword(tortget, "tort@", torbget, 0) {
+	f_tort, f_add, f_load, f_exit,
+};
+wdefword(toipget, "toip@", tortget, 0) {
+	f_toip, f_add, f_load, f_exit,
+};
+wdefword(tossget, "toss@", toipget, 0) {
+	f_toss, f_add, f_load, f_exit,
+};
+wdefword(tonextset, "tonext!", tossget, 0) {
+        f_tonext, f_add, f_store, f_exit,
+};
+wdefword(tospset, "tosp!", tonextset, 0) {
+        f_tosp, f_add, f_store, f_exit,
+};
+wdefword(torpset, "torp!", tospset, 0) {
+        f_torp, f_add, f_store, f_exit,
+};
+wdefword(tosbset, "tosb!", torpset, 0) {
+        f_tosb, f_add, f_store, f_exit,
+};
+wdefword(tostset, "tost!", tosbset, 0) {
+        f_tost, f_add, f_store, f_exit,
+};
+wdefword(torbset, "torb!", tostset, 0) {
+        f_torb, f_add, f_store, f_exit,
+};
+wdefword(tortset, "tort!", torbset, 0) {
+        f_tort, f_add, f_store, f_exit,
+};
+wdefword(toipset, "toip!", tortset, 0) {
+        f_toip, f_add, f_store, f_exit,
+};
+wdefword(tossset, "toss!", toipset, 0) {
+        f_toss, f_add, f_store, f_exit,
+};
+wdefconst(tsize, "tsize", tsize, tossset, 0);
+wdefconst(dsize, "dsize", dsize, tsize, 0);
+wdefconst(rsize, "rsize", rsize, dsize, 0);
+wdefconst(gsize, "gsize", gsize, rsize, 0);
+
+wdefcode(upget, "up@", gsize, 0) {
+	dpush(up);
+	next();
+};
+
+wdefword(yieldloop, "yieldloop", upget, 0) {
+	f_yield, f_branch, w_yieldloop,
+};
+
+wdefword(w2xt, "'", yieldloop, 0) {
+	f_token, f_tiused, f_branch0, w_w2xt,
+	f_tib, f_tiused, f_find, f_exit,
+};
+
+// (entry)
+wdefword(tasknew, "tasknew", w2xt, 0) {
+	f_hereget, f_toipset,
+	f_lit, 0, f_hereget, f_tossset,
+	f_hereget, f_tsize, f_add, f_gsize, f_add, f_hereget, f_tosbset,
+	f_hereget, f_tosbget, f_dsize, f_add, f_hereget, f_tostset,
+	f_hereget, f_tostget, f_gsize, f_add, f_gsize, f_add, f_hereget, f_torbset,
+	f_hereget, f_torbget, f_rsize, f_add, f_hereget, f_tortset,
+	f_hereget, f_tosbget, f_hereget, f_tospset,
+	f_hereget, f_torbget, f_hereget, f_torpset,
+	f_upget, f_tonextget, f_hereget, f_tonextset,
+	f_hereget, f_upget, f_tonextset,
+	f_hereget, f_tortget, f_gsize, f_add, f_hereset,
+	f_yield, f_exit,
+};
+
+/*
+: drawloop begin yield 10 30 10 30 1 negate fbsolid false until ;
+' drawloop wbody@ tasknew 
+*/
+
+wdefcode(sprst, "sprst", tasknew, 0) {
 	sp = sb;
 	ss &= ~(ssdove);
 	ss &= ~(ssdund);
@@ -2177,8 +2301,8 @@ forth_t boot_dog[] = {
 	f_branch, boot_dog,
 };
 
-tasknew(human, 8, 128, 128, boot_human, task_dog);
-tasknew(dog, 0, 16, 16, boot_dog, task_human);
+tasknew(human, boot_human, task_dog);
+tasknew(dog, boot_dog, task_human);
 
 void forth(void) {
 	up = task_human;
